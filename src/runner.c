@@ -85,14 +85,61 @@ void esperar_autorizacao(Msg msg, char *mypipe) {
     close(fd);
 }
 
-void correr_comando(char *comando) {
-    char cmd_copy[256];
-    strcpy(cmd_copy, comando);
+void tratar_stdin_redirect(char *args[]) {
+    for (int i = 0; args[i] != NULL; i++) {
+        if (strcmp(args[i], "<") == 0) {
+
+            int fd = open(args[i+1], O_RDONLY);
+            if (fd < 0) {
+                write(2, "input file error\n", 18);
+                _exit(1);
+            }
+
+            dup2(fd, STDIN_FILENO);
+            close(fd);
+
+            args[i] = NULL;
+            break;
+        }
+    }
+}
+
+void tratar_stdout_redirect(char *args[]) {
+    for (int i = 0; args[i] != NULL; i++) {
+        if (strcmp(args[i], ">") == 0) {
+            int fd = open(args[i+1], O_CREAT | O_WRONLY | O_TRUNC, 0644);
+
+            dup2(fd, STDOUT_FILENO);
+            close(fd);
+
+            args[i] = NULL;
+            break;
+        }
+    }
+}
+
+void tratar_stderr_redirect(char *args[]) {
+    for (int i = 0; args[i] != NULL; i++) {
+        if (strcmp(args[i], "2>") == 0) {
+            int fd = open(args[i+1], O_CREAT | O_WRONLY | O_TRUNC, 0644);
+
+            dup2(fd, STDERR_FILENO);
+            close(fd);
+
+            args[i] = NULL;
+            break;
+        }
+    }
+}
+
+void executar_comando(char *cmd) {
+    char copy[256];
+    strcpy(copy, cmd);
 
     char *args[100];
     int i = 0;
 
-    char *token = strtok(cmd_copy, " ");
+    char *token = strtok(copy, " ");
     while (token != NULL) {
         args[i++] = token;
         token = strtok(NULL, " ");
@@ -102,13 +149,59 @@ void correr_comando(char *comando) {
     pid_t pid = fork();
 
     if (pid == 0) {
-        execvp(args[0], args);
+        tratar_stdin_redirect(args);
+        tratar_stdout_redirect(args);
+        tratar_stderr_redirect(args);
 
-        write(2, "exec failed\n", 12);
+        execvp(args[0], args);
         _exit(1);
-    } 
-    else {
+    }
+
+    wait(NULL);
+}
+
+void correr_comando(char *comando) {
+
+    char copia[256];
+    strcpy(copia, comando);
+
+    char *parts[10];
+    int n = 0;
+
+    char *token = strtok(copia, "|");
+    while (token != NULL) {
+        parts[n++] = token;
+        token = strtok(NULL, "|");
+    }
+
+    // pipeline completo (1 ou N pipes)
+    int pipefd[2];
+    int input_fd = 0;
+
+    for (int i = 0; i < n; i++) {
+
+        pipe(pipefd);
+
+        pid_t pid = fork();
+
+        if (pid == 0) {
+
+            dup2(input_fd, STDIN_FILENO);
+
+            if (i < n - 1) {
+                dup2(pipefd[1], STDOUT_FILENO);
+            }
+
+            close(pipefd[0]);
+
+            executar_comando(parts[i]);
+            _exit(0);
+        }
+
         wait(NULL);
+
+        close(pipefd[1]);
+        input_fd = pipefd[0];
     }
 }
 
