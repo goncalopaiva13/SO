@@ -1,11 +1,5 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include "defs.h"
-#include <stdlib.h>
-
+#include <sys/types.h>
 
 
 int main (int argc, char * argv[]){
@@ -27,13 +21,13 @@ int main (int argc, char * argv[]){
 
 
 	int fifo_server = open(FIFO_CONTROLLER,O_RDONLY);
-	int fd_dummy = open(FIFO_CONTROLLER, O_WRONLY); // mantém o FIFO aberto
-
+	int fd_dummy __attribute__((unused))= open(FIFO_CONTROLLER, O_WRONLY); // mantém o FIFO aberto atributte unused porque ele não é utilizado no resto do controler
 
 	Msg msg;
 
 
 	int shutdown = 0; // tem haver com a operacao == 's'
+	int shutdown_pid = -1;
 
 	
 	while(read(fifo_server, &msg, sizeof(Msg))>0){
@@ -47,11 +41,13 @@ int main (int argc, char * argv[]){
 	
 	if(msg.operacao == 's'){ //  pedir a terminação do programa controller
     	
-		shutdown = 1;
-		if(em_execucao == 0 && fila_size == 0){
-			break;
-		}
-   
+    	shutdown = 1;
+    	shutdown_pid = msg.runner_pid;
+
+    	if(em_execucao == 0 && fila_size == 0){
+        	break;
+    	}
+
 		// se ainda há runners a executar, não faz nada
 		// o loop continua a receber 'f' dos runners
 		// quando o último 'f' chegar e em_execucao ficar 0, o controller termina
@@ -92,6 +88,7 @@ int main (int argc, char * argv[]){
 			
 			Resposta r;
 			r.autorizado = 1;
+			r.tipo = 1;
 
 			write(fifo_client, &r, sizeof(Resposta));
 			close(fifo_client);
@@ -232,6 +229,7 @@ int main (int argc, char * argv[]){
 				int fifo_client = open(fifo_client_name, O_WRONLY);
 				
 				Resposta r;
+				r.tipo = 1;
 				r.autorizado = 1;
 
 				write(fifo_client, &r, sizeof(Resposta));
@@ -261,6 +259,20 @@ int main (int argc, char * argv[]){
 
 	
 }
+// Envia resposta ao runner que pediu para o controler terminar
+	if (shutdown_pid != -1) {
+    	char fifo_client_name[64];
+    	sprintf(fifo_client_name, FIFO_RUNNER, shutdown_pid);
+
+    	int fifo_client = open(fifo_client_name, O_WRONLY);
+
+    	Resposta r;
+    	r.tipo = 2;          
+    	r.autorizado = 0;    // não interessa aqui
+
+    	write(fifo_client, &r, sizeof(Resposta));
+    	close(fifo_client);
+	}
 	
 	
 	return 0;
