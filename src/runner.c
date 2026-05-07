@@ -1,5 +1,6 @@
 #include "defs.h"
 #include <sys/wait.h>
+#include "executor.h"
 
 /* ===================== PROTÓTIPOS ===================== */
 
@@ -51,7 +52,7 @@ void modo_exec(char *argv[]){
 
     enviar_pedido(msg);
     esperar_autorizacao(msg, mypipe);
-    correr_comando(msg.comando);
+    executar_linha_comando(msg.comando);  //Foi isto que alterei João!
     notificar_concluido(msg);
 
     char tmsg[100];
@@ -85,56 +86,12 @@ void esperar_autorizacao(Msg msg, char *mypipe) {
     close(fd);
 }
 
-void tratar_stdin_redirect(char *args[]) {
-    for (int i = 0; args[i] != NULL; i++) {
-        if (strcmp(args[i], "<") == 0) {
-
-            int fd = open(args[i+1], O_RDONLY);
-            if (fd < 0) {
-                write(2, "input file error\n", 18);
-                _exit(1);
-            }
-
-            dup2(fd, STDIN_FILENO);
-            close(fd);
-
-            args[i] = NULL;
-            break;
-        }
-    }
-}
-
-void tratar_stdout_redirect(char *args[]) {
-    for (int i = 0; args[i] != NULL; i++) {
-        if (strcmp(args[i], ">") == 0) {
-            int fd = open(args[i+1], O_CREAT | O_WRONLY | O_TRUNC, 0644);
-
-            dup2(fd, STDOUT_FILENO);
-            close(fd);
-
-            args[i] = NULL;
-            break;
-        }
-    }
-}
-
-void tratar_stderr_redirect(char *args[]) {
-    for (int i = 0; args[i] != NULL; i++) {
-        if (strcmp(args[i], "2>") == 0) {
-            int fd = open(args[i+1], O_CREAT | O_WRONLY | O_TRUNC, 0644);
-
-            dup2(fd, STDERR_FILENO);
-            close(fd);
-
-            args[i] = NULL;
-            break;
-        }
-    }
-}
-
-void executar_comando(char *cmd) {
-    char copy[256];
-    strcpy(copy, cmd);
+//em principio isto vai ser para apagar
+/*
+void correr_comando(char *comando) {
+    char cmd_copy[256];
+    strcpy(cmd_copy, comando);
+>>>>>>> f7395bf ( pequena alteração feita)
 
     char *args[100];
     int i = 0;
@@ -204,7 +161,7 @@ void correr_comando(char *comando) {
         input_fd = pipefd[0];
     }
 }
-
+*/
 void notificar_concluido(Msg msg) {
     int fd = open(FIFO_CONTROLLER, O_WRONLY);
 
