@@ -9,6 +9,10 @@ int main (int argc, char * argv[]){
 		perror("fifo");
 	}
 
+	if(argc != 3){
+		write(2,"Invalid arguments\n", 18);
+		return -1;
+	}
 	int max_paralelo = atoi(argv[1]);
 	int sched_policy = atoi(argv[2]); // 0 = FIFO, 1 = Round Robin
 	
@@ -339,10 +343,9 @@ int main (int argc, char * argv[]){
 
 						// serve o comando do indice idx
 						Comando primeiro = fila_espera[idx];
-						strcpy(ultimo_user, primeiro.user_id);
 						printf("ultimo_user: %s, escolhi: %s\n", ultimo_user, primeiro.user_id);
-												
-
+						strcpy(ultimo_user, primeiro.user_id);
+						
 						// remove o comando do índice idx 
 						for(int i = idx + 1; i < fila_size; i++){
 							fila_espera[i-1] = fila_espera[i];
