@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -f log.txt out.txt erros.txt
+
 echo "=== Teste 1: comando simples ==="
 ./bin/runner -e 1 "echo ola"
 

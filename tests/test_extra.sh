@@ -4,6 +4,8 @@ echo "===== COMPILAR ====="
 make clean
 make
 
+rm -f log.txt out.txt erros.txt
+
 echo
 echo "===== TESTE 1: consulta com comandos em execução e em espera ====="
 ./bin/controller 1 1 &

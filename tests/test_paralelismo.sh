@@ -5,8 +5,8 @@ make clean
 make
 
 echo
-echo "===== TESTE COM controller 1 1 ====="
-./bin/controller 1 1 &
+echo "===== TESTE COM controller 1 0 ====="
+./bin/controller 1 0 &
 CONTROLLER_PID=$!
 sleep 1
 
@@ -23,8 +23,8 @@ time (
 wait $CONTROLLER_PID 2>/dev/null
 
 echo
-echo "===== TESTE COM controller 2 1 ====="
-./bin/controller 2 1 &
+echo "===== TESTE COM controller 2 0 ====="
+./bin/controller 2 0 &
 CONTROLLER_PID=$!
 sleep 1
 
@@ -41,8 +41,8 @@ time (
 wait $CONTROLLER_PID 2>/dev/null
 
 echo
-echo "===== TESTE COM controller 4 1 ====="
-./bin/controller 4 1 &
+echo "===== TESTE COM controller 4 0 ====="
+./bin/controller 4 0 &
 CONTROLLER_PID=$!
 sleep 1
 
